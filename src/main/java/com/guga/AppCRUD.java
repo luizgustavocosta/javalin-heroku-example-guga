@@ -2,20 +2,32 @@ package com.guga;
 
 import io.javalin.Context;
 import io.javalin.Javalin;
+import io.javalin.core.util.FileUtil;
 import io.reactivex.Flowable;
 
 public class AppCRUD {
 
     public static void main(String[] args) {
         final Javalin app = Javalin.create();
-        app.get("/users/", ctx -> {
-            final Flowable<String> all = UserController.getAll(ctx);
-            ctx.json(all);
-        })
+        app
+                .get("/users", UserController::getAll)
+                .enableStaticFiles("/public")
                 .post("/users/", UserController::create)
                 .get("/users/:user-id", UserController::getOne)
                 .patch("/users/:user-id", UserController::update)
                 .delete("/users/:user-id", UserController::delete)
+                .post("/upload", ctx -> {
+                            try {
+                                ctx.uploadedFiles("upload").forEach(
+                                        file -> {
+                                    FileUtil.streamToFile(file.getContent(), "upload/" + file.getName());
+                                });
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                )
                 .start();
     }
 
